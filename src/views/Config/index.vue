@@ -187,7 +187,7 @@ function skip(path: string) {
     </nav>
     <nav>
       <div class="grid grid-flow-col gap-4">
-        <a href="https://github.com/robert0921/MyAIStudy" target="_blank" class="cursor-pointer text-inherit">
+        <a href="https://github.com/robert0921/DDCLuckyDraw" target="_blank" class="cursor-pointer text-inherit">
           <svg-icon name="github" />
         </a>
       </div>
