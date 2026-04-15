@@ -1,0 +1,20 @@
+# Node / Vite / Tauri 常见忽略项（模板，必要时调整）
+node_modules/
+dist/
+dist-*
+build/
+target/
+*.log
+.env
+.env.*
+.cache/
+.vite/
+public/locales/*.local
+src-tauri/target/
+src-tauri/.cargo/
+*.db
+*.sqlite
+/.DS_Store
+.idea/
+.vscode/
+publish/
