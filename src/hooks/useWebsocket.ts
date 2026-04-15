@@ -51,7 +51,7 @@ export function useWebsocket() {
     async function registerSW() {
         if ('serviceWorker' in navigator) {
             try {
-                registration.value = await navigator.serviceWorker.register('/log-lottery/sw.js')
+                registration.value = await navigator.serviceWorker.register('/ddc-luckydraw/sw.js')
                 navigator.serviceWorker.removeEventListener('message', swMessageHandler)
                 navigator.serviceWorker.addEventListener('message', swMessageHandler)
             }

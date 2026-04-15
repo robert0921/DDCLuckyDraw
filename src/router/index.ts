@@ -4,16 +4,16 @@ import i18n from '@/locales/i18n'
 import Home from '@/views/Home/index.vue'
 
 export const configRoutes = {
-    path: '/log-lottery/config',
+    path: '/ddc-luckydraw/config',
     name: 'Config',
     component: () => import('@/views/Config/index.vue'),
     children: [
         {
             path: '',
-            redirect: '/log-lottery/config/prize',
+            redirect: '/ddc-luckydraw/config/prize',
         },
         {
-            path: '/log-lottery/config/person',
+            path: '/ddc-luckydraw/config/person',
             name: 'PersonConfig',
             component: () => import('@/views/Config/Person/index.vue'),
             meta: {
@@ -24,10 +24,10 @@ export const configRoutes = {
             children: [
                 {
                     path: '',
-                    redirect: '/log-lottery/config/person/all',
+                    redirect: '/ddc-luckydraw/config/person/all',
                 },
                 {
-                    path: '/log-lottery/config/person/all',
+                    path: '/ddc-luckydraw/config/person/all',
                     name: 'AllPersonConfig',
                     component: () => import('@/views/Config/Person/PersonAll/index.vue'),
                     meta: {
@@ -37,7 +37,7 @@ export const configRoutes = {
                     },
                 },
                 {
-                    path: '/log-lottery/config/person/already',
+                    path: '/ddc-luckydraw/config/person/already',
                     name: 'AlreadyPerson',
                     component: () => import('@/views/Config/Person/PersonAlready/index.vue'),
                     meta: {
@@ -49,7 +49,7 @@ export const configRoutes = {
             ],
         },
         {
-            path: '/log-lottery/config/prize',
+            path: '/ddc-luckydraw/config/prize',
             name: 'PrizeConfig',
             component: () => import('@/views/Config/Prize/PrizeConfig.vue'),
             meta: {
@@ -58,7 +58,7 @@ export const configRoutes = {
             },
         },
         {
-            path: '/log-lottery/config/global/face',
+            path: '/ddc-luckydraw/config/global/face',
             name: 'FaceConfig',
             component: () => import('@/views/Config/Global/FaceConfig/index.vue'),
             meta: {
@@ -67,7 +67,7 @@ export const configRoutes = {
             },
         },
         {
-            path: '/log-lottery/config/global/image',
+            path: '/ddc-luckydraw/config/global/image',
             name: 'ImageConfig',
             component: () => import('@/views/Config/Global/ImageConfig/index.vue'),
             meta: {
@@ -76,7 +76,7 @@ export const configRoutes = {
             },
         },
         {
-            path: '/log-lottery/config/global/music',
+            path: '/ddc-luckydraw/config/global/music',
             name: 'MusicConfig',
             component: () => import('@/views/Config/Global/MusicConfig/index.vue'),
             meta: {
@@ -85,7 +85,7 @@ export const configRoutes = {
             },
         },
         {
-            path: '/log-lottery/config/server',
+            path: '/ddc-luckydraw/config/server',
             name: 'Server',
             component: () => import('@/views/Config/Server/index.vue'),
             meta: {
@@ -95,7 +95,7 @@ export const configRoutes = {
             },
         },
         {
-            path: '/log-lottery/config/readme',
+            path: '/ddc-luckydraw/config/readme',
             name: 'Readme',
             component: () => import('@/views/Config/Readme/index.vue'),
             meta: {
@@ -108,25 +108,25 @@ export const configRoutes = {
 const routes = [
     {
         path: '/',
-        redirect: '/log-lottery',
+        redirect: '/ddc-luckydraw',
     },
     {
-        path: '/log-lottery',
+        path: '/ddc-luckydraw',
         component: Layout,
-        redirect: '/log-lottery/home',
+        redirect: '/ddc-luckydraw/home',
         children: [
             {
-                path: '/log-lottery/home',
+                path: '/ddc-luckydraw/home',
                 name: 'Home',
                 component: Home,
             },
             {
-                path: '/log-lottery/demo',
+                path: '/ddc-luckydraw/demo',
                 name: 'Demo',
                 component: () => import('@/views/Demo/index.vue'),
             },
             {
-                path: '/log-lottery/mobile',
+                path: '/ddc-luckydraw/mobile',
                 name: 'Mobile',
                 meta: {
                     isMobile: true,
