@@ -116,45 +116,94 @@ src/
 
 ## 抽奖核心机制
 
-抽奖逻辑集中在 `src/views/Home/useViewModel.ts`，是整个项目最核心的模块（约 1300 行）。
+### 当前模式：奖品卡牌抽奖（Prize-Card Mode）
 
-### 状态机（LuckydrawStatus）
+抽奖页面为「奖品绑定卡牌→点击揭晓」模式。核心逻辑分布在两个文件：
+
+- **`src/views/Home/index.vue`**：页面层，负责卡牌网格渲染、视觉状态机、洗牌动画、持久化与事件监听。
+- **`src/views/Home/useViewModel.ts`**：Three.js 层，负责球体动画、TWEEN 补间、中奖索引计算与事件派发。
+
+---
+
+### 网格布局
+
+主页面显示 **6 行 × 15 列 = 90 格**（含 3 条隐藏列 `[4, 9, 14]`，实际可用格位 **72**），行标签为 `D X C U P F`，列标签为十六进制 `0～E`，编号规则：跳过隐藏列后按行/列顺序标注 `01～72`。
+
+### 奖品分配机制（`getCardGrid()`）
+
+1. 从 `prizeConfig.getPrizeConfig` 读取全部奖品，按各奖品 `count` 字段展开奖品池。
+2. 若奖品池 > 可用格位：截断；若不足：随机补充到满格（保证每格都有奖品，无未中奖格）。
+3. Fisher-Yates 打乱后按格位顺序绑定。
+4. 已揭晓格（`revealedMap`）固定不重新分配，`locked: true`。
+5. 启动新一轮抽奖（`rebindPrizes()`）时，按 `count - isUsedCount` 计算剩余量重新分配未揭晓格，实现每轮奖品动态刷新。
+
+### 页面视觉状态机（`appMode`）
 
 ```
-init(0) ──enterLuckydraw()──► ready(1) ──startLuckydraw()──► running(2)
+showcase ──enterNewLuckydraw()──► entering（洗牌动画）──► luckydraw
                                                                │
-                                              stopLuckydraw() ▼
-                                                            end(3)
-                                              continueLuckydraw() ──► init(0)
-                                              quitLuckydraw()    ──► init(0)
+                                               点击已揭晓格 / luckydraw:returnToShowcase
+                                                               ▼
+                                                           showcase
 ```
 
-- **`enterLuckydraw()`**：准备阶段，随机采样人员池，初始化 Three.js 场景中的标靶位置（grid/sphere/helix/table 四种布局）。
-- **`startLuckydraw()`** / **`startLuckydrawForCard(idx)`**：启动 TWEEN 动画，人员卡牌在空间中随机飞舞；`ForCard` 版本针对卡牌网格中用户点击的指定位置抽奖。
-- **`stopLuckydraw()`**：
-  1. 从人员池中抽取中奖者（遵守奖项剩余次数限制）。
-  2. 触发 TWEEN 飞入动画，将选中卡牌定位到预选卡位。
-  3. 通过 `window.dispatchEvent(new CustomEvent('luckydraw:end', { detail }))` 通知页面层（解耦 ViewModel 与 View）。
-  4. 内置 1600ms 回退机制：若 Three.js `onComplete` 未回调则强制派发事件，防止 UI 卡死。
-- **`continueLuckydraw()`**：展示结果后，将获奖人员标记为已使用，重置 Three.js 场景，返回 init 状态。
-- **`quitLuckydraw()`**：中途退出，重置所有状态，不记录结果。
+| 状态 | 卡牌表现 |
+|---|---|
+| `showcase` | 已揭晓格显示奖品图片；未揭晓格显示渐变色+编号+水印，带 Flicker 闪烁效果 |
+| `entering` | 洗牌动画（5 轮 CSS Transform 位移，Fisher-Yates + 保证每张都移动） |
+| `luckydraw` | 点击未揭晓格触发 Three.js 球体抽奖 |
+
+### Flicker 闪烁系统
+
+每张未揭晓卡牌独立调度 `scheduleFlickerForCard()`，通过随机初始延迟（200–1600ms）+ 随机周期（700–2300ms）驱动 `flickerState` 响应式对象切换明暗颜色，模拟霓虹灯效果。每轮洗牌前 `stopFlickers()`，洗牌完成后 `startFlickers()` 重新启动，避免定时器积累。
+
+### 洗牌动画（`enterNewLuckydraw()`）
+
+5 轮 CSS Transform 动画（`translateX/Y + rotate + scale`），每轮：
+1. Fisher-Yates 打乱可见未揭晓格的目标位置。
+2. 奇数轮二次打乱 + `shuffleToDifferentPositions()` 保证无原地不动。
+3. 每轮等待 660ms，最终归位后切换 `appMode` 为 `luckydraw`。
+
+### 点击抽奖流程（`onCardClick()` → Three.js）
+
+1. `syncTableDataFromCardGrid()`：将当前 cardGrid 映射为 Three.js 所需的 `tableData`（含奖品 `id/name/avatar` 等字段）。
+2. `vm.startLuckydrawForCard(idx)`：重建 CSS3D 对象、形成球体、TWEEN 旋转动画。
+3. 旋转结束后 TWEEN `onComplete` 派发 `window CustomEvent('luckydraw:end', { detail: { index, person } })`。
+4. 页面监听 `luckydraw:end` → `onLuckydrawEnd()`：将对应格位写入 `revealedMap`（持久化到 `localStorage['luckydraw:revealedMap']`）→ UI 响应式更新，揭晓图片覆盖卡牌。
+5. 内置 1600ms 回退：若 TWEEN `onComplete` 未触发，强制派发事件防止 UI 卡死。
 
 ### 自定义事件总线
 
-ViewModel 与 View 通过 DOM CustomEvent 解耦，主要事件：
+| 事件名 | 触发方 | 监听方 | 携带数据 |
+|---|---|---|---|
+| `luckydraw:end` | `useViewModel.ts` | `Home/index.vue` | `{ index: number, person: any }` |
+| `luckydraw:returnToShowcase` | `useViewModel.ts` | `Home/index.vue` | — |
+| `shuffle:round` | `enterNewLuckydraw()` | 调试用 | `{ round: number }` |
 
-| 事件名 | 触发时机 |
-|---|---|
-| `luckydraw:end` | 抽奖停止，携带 `{ index, person }` |
-| `luckydraw:returnToShowcase` | continueLuckydraw 完成，回到展示模式 |
+### 揭晓持久化
+
+`revealedMap`（`Record<'row_col', prizObject>`）通过 `watch(deep)` 同步写入 `localStorage['luckydraw:revealedMap']`，页面刷新后自动恢复已揭晓状态，已揭晓格不可再次触发抽奖。
 
 ### 定时自动停止
 
-`globalConfig.definiteTime`（秒）> 0 时，启动 `setTimeout` 在指定秒数后自动调用 `stopLuckydraw()`，同时配合 Web Worker 定时器防止页面隐藏时 `setTimeout` 降频。
+`globalConfig.definiteTime`（秒）> 0 时，`startLuckydrawForCard()` 内部启动 `setTimeout` 在设定秒数后自动调用 `stopLuckydraw()`，配合 Timer Web Worker 防止页面隐藏时计时器降频。
 
 ### 音乐控制
 
-`startLuckydrawMusic()` / `stopLuckydrawMusic()` 动态创建 `HTMLAudioElement`，支持从 localforage（IndexedDB）加载自定义音频，播放时生成 ObjectURL，停止时及时 `revokeObjectURL` 防止内存泄漏。
+`startLuckydrawMusic()` / `stopLuckydrawMusic()` 动态创建 `HTMLAudioElement`，支持从 localforage（IndexedDB）加载自定义音频 Blob，播放时生成 ObjectURL，停止时及时 `revokeObjectURL` 防止内存泄漏。同时维护 `playingAudios[]` 数组统一管理多个音效实例。
+
+### LuckydrawStatus（Three.js 内部状态）
+
+```
+init(0) ──enterLuckydraw()──► ready(1) ──startLuckydrawForCard(idx)──► running(2)
+                                                                            │
+                                                         stopLuckydraw()  ▼
+                                                                        end(3)
+                                                    continueLuckydraw() ──► init(0)
+                                                    quitLuckydraw()    ──► init(0)
+```
+
+> **注意**：当前版本已移除「抽取人员」逻辑，`tableData` 完全由 `syncTableDataFromCardGrid()` 从奖品卡牌网格填充，不再从 `personConfig` 读取员工名单。
 
 ---
 
@@ -191,11 +240,13 @@ ViewModel 与 View 通过 DOM CustomEvent 解耦，主要事件：
 
 | Store | 关键字段 |
 |---|---|
-| `globalConfig` | `rowCount`（行数）、`theme`（主题色/字体/卡牌尺寸）、`musicList`、`imageList`、`definiteTime`、`language` |
-| `personConfig` | 全员名单、已中奖名单、按奖项分组名单 |
-| `prizeConfig` | 奖项列表（含图片）、当前奖项、临时奖项、`count`/`isUsedCount` 剩余次数追踪 |
+| `globalConfig` | `rowCount`、`theme`（主题色/字体/卡牌尺寸）、`musicList`、`imageList`、`definiteTime`、`language` |
+| `personConfig` | 人员名单（已保留结构，当前抽奖主流程不使用）、`winRecords`（中奖记录） |
+| `prizeConfig` | 奖项列表（含图片）、当前奖项、`count`/`isUsedCount` 剩余次数追踪（驱动奖品分配） |
 | `serverConfig` | 后端 WebSocket URL + HTTP API 基地址 + Token |
 | `system` | 全屏状态、全局 Loading 显示控制 |
+
+> **当前抽奖模式**：中奖记录写入 `personConfig.winRecords`（ref 数组），与原员工名单 store 共存但相互独立。
 
 奖项图片以 `{ id, name, url }` 对象存储，大图走 IndexedDB（Dexie）存取，`url` 字段为 `"Storage"` 时按 `id` 从 Dexie 中取 Blob 并生成 ObjectURL，有效控制 localStorage 体积。
 
@@ -307,9 +358,9 @@ locales/
 | 方案 | 用途 |
 |---|---|
 | `pinia-plugin-persist` + localStorage | 所有 store 状态自动序列化/反序列化 |
-| `Dexie`（IndexedDB） | 奖项/人员的大图 Blob 存储，避免 localStorage 超限（5MB） |
+| `Dexie`（IndexedDB） | 奖项的大图 Blob 存储，避免 localStorage 超限（5MB） |
 | `localforage` | 音频 Blob 存储（自定义抽奖音乐） |
-| `localStorage` 原始读写 | `luckydraw:revealedMap`（卡牌已翻牌状态，跨刷新保持） |
+| `localStorage` 原始读写 | `luckydraw:revealedMap`（Record\<'row_col', prizeObject\>，卡牌已揭晓状态，跨刷新持久化） |
 
 Dexie 封装在 `src/utils/dexie/`，提供 `getItem` / `setItem` / `removeItem` 等接口；localforage 封装在 `src/utils/localforage/`，接口相同，底层优先使用 IndexedDB。
 
@@ -358,7 +409,18 @@ pnpm tauri build
 > 先在 Config → Server 页填写正确的 WebSocket URL，然后在 Demo 页点击「Connect」测试。Service Worker 须在 HTTPS 或 localhost 环境下注册。
 
 **Q：抽奖时页面卡住不动**
-> 内置 1600ms 回退机制会强制派发 `luckydraw:end` 事件。若频繁出现，检查 Three.js 版本与 `CSS3DRenderer` 是否正常初始化（F12 控制台查看报错）。
+> 内置 1600ms 回退机制会强制派发 `luckydraw:end` 事件。若频繁出现，在浏览器控制台执行以下诊断命令：
+```js
+window.addEventListener('luckydraw:end', e => console.log('EVENT luckydraw:end', e.detail));
+console.log('renderer:', document.querySelector('.threejs-container')?.firstElementChild?.tagName);
+console.log('revealed count:', document.querySelectorAll('.grid-cell.revealed').length);
+```
+
+**Q：点击卡牌没反应**
+> 1. 检查 `appMode` 是否为 `luckydraw`（需先点击「进入抽奖」按钮完成洗牌动画）。2. 已揭晓（`revealed`）或隐藏列（列索引 4/9/14）的格位不可点击。
+
+**Q：刷新后揭晓状态消失**
+> `revealedMap` 序列化到 `localStorage['luckydraw:revealedMap']`，确认浏览器未开启「无痕模式」（无痕下 localStorage 会话结束后清空）。
 
 ---
 
