@@ -1,5 +1,5 @@
-export const buttonEn = {
-    enterLottery: 'Enter Lottery',
+﻿export const buttonEn = {
+    enterLuckydraw: 'Enter Luckydraw',
     start: 'Start',
     selectLucky: 'Draw the Lucky',
     continue: 'Continue',
@@ -28,7 +28,7 @@ export const buttonEn = {
 }
 
 export const buttonZhCn = {
-    enterLottery: '进入抽奖',
+    enterLuckydraw: '进入抽奖',
     start: '开始',
     selectLucky: '抽取幸运儿',
     continue: '继续',

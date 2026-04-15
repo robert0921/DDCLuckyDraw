@@ -1,4 +1,4 @@
-# 操作说明
+﻿# 操作说明
 
 下面的步骤以最简单的语言说明如何使用抽奖程序，适合不会写代码或不熟悉电脑技术的人员。
 
@@ -33,7 +33,7 @@
 - 如果你想从头开始重置所有已揭晓结果：打开浏览器地址栏，输入并运行下面两行（此操作会清空所有已揭晓记录并刷新页面）：
 
 ```js
-localStorage.removeItem('lottery:revealedMap')
+localStorage.removeItem('luckydraw:revealedMap')
 location.reload()
 ```
 

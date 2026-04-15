@@ -1,4 +1,4 @@
-import type { IPrizeConfig } from '@/types/storeType'
+﻿import type { IPrizeConfig } from '@/types/storeType'
 import localforage from 'localforage'
 import { cloneDeep } from 'lodash-es'
 import { storeToRefs } from 'pinia'
@@ -115,7 +115,7 @@ export function usePrizeConfig() {
             p.separateCount = { enable: false, countList: [] }
         }
         // 清空已揭晓记录，让主页面恢复初始抽奖状态
-        try { localStorage.removeItem('lottery:revealedMap') } catch (e) {}
+        try { localStorage.removeItem('luckydraw:revealedMap') } catch (e) {}
         toast.success(i18n.global.t('error.success'))
     }
     async function delAll() {

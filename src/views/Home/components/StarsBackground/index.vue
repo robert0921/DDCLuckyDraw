@@ -1,4 +1,4 @@
-<script setup lang='ts'>
+﻿<script setup lang='ts'>
 import { useElementSize } from '@vueuse/core'
 import localforage from 'localforage'
 import Sparticles from 'sparticles'
@@ -75,14 +75,14 @@ onMounted(() => {
     // 鼠标视差效果
     window.addEventListener('mousemove', handleMouseMove)
     // 侦听抽奖结束事件以触发粒子爆发
-    window.addEventListener('lottery:end', onLotteryEndParticle)
+    window.addEventListener('luckydraw:end', onLuckydrawEndParticle)
     // 侦听洗牌轮次事件，触发小幅粒子效果
     window.addEventListener('shuffle:round', onShuffleRoundParticle)
 })
 onUnmounted(() => {
     window.removeEventListener('resize', listenWindowSize)
     window.removeEventListener('mousemove', handleMouseMove)
-    window.removeEventListener('lottery:end', onLotteryEndParticle)
+    window.removeEventListener('luckydraw:end', onLuckydrawEndParticle)
     window.removeEventListener('shuffle:round', onShuffleRoundParticle)
     try {
         if (spBackInstance.value && typeof spBackInstance.value.destroy === 'function') spBackInstance.value.destroy()
@@ -120,7 +120,7 @@ function onShuffleRoundParticle(ev: any) {
     catch (e) { console.error('onShuffleRoundParticle failed', e) }
 }
 
-function onLotteryEndParticle(ev: any) {
+function onLuckydrawEndParticle(ev: any) {
     try {
         const detail = ev && ev.detail ? ev.detail : null
         // 尝试从事件中获取主题色（优先），否则使用 global lucky color
@@ -129,7 +129,7 @@ function onLotteryEndParticle(ev: any) {
         if (!color && getLuckyColor && getLuckyColor.value) color = getLuckyColor.value
         triggerBurst(color)
     }
-    catch (e) { console.error('onLotteryEndParticle failed', e) }
+    catch (e) { console.error('onLuckydrawEndParticle failed', e) }
 }
 
 function triggerBurst(color?: string) {
@@ -215,7 +215,7 @@ const patternCells = computed(() => {
         </div>
         <div ref="starBackRef" class="particles-layer particles-back" />
     </div>
-    <!-- foreground particles layer: above lottery grid but below three.js overlay -->
+    <!-- foreground particles layer: above luckydraw grid but below three.js overlay -->
     <div class="particles-foreground">
         <div ref="starFrontRef" class="particles-layer particles-front" />
     </div>
@@ -243,14 +243,14 @@ const patternCells = computed(() => {
 .background-layer {
     position: fixed;
     inset: 0;
-    z-index: 0; /* behind lottery content but above page background */
+    z-index: 0; /* behind luckydraw content but above page background */
     pointer-events: none;
 }
 .particles-foreground {
     position: fixed;
     inset: 0;
     pointer-events: none;
-    z-index: 10; /* above lottery card grid (z-index:1) but below three.js container (z-index:5 → cards at z:1) */
+    z-index: 10; /* above luckydraw card grid (z-index:1) but below three.js container (z-index:5 → cards at z:1) */
 }
 .particles-layer {
     position: absolute;

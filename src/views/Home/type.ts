@@ -1,4 +1,4 @@
-export enum LotteryStatus {
+﻿export enum LuckydrawStatus {
     init = 0,
     ready = 1,
     running = 2,

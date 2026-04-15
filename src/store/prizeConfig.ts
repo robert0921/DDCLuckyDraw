@@ -1,4 +1,4 @@
-import type { IPrizeConfig } from '@/types/storeType'
+﻿import type { IPrizeConfig } from '@/types/storeType'
 import { defineStore } from 'pinia'
 import { defaultCurrentPrize, defaultPrizeList } from './data'
 
@@ -164,7 +164,7 @@ export const usePrizeConfig = defineStore('prize', {
             }
             // 清理已揭晓持久化数据（与抽奖页面的 localStorage 键保持一致）
             try {
-                localStorage.removeItem('lottery:revealedMap')
+                localStorage.removeItem('luckydraw:revealedMap')
             }
             catch (e) {
                 console.error('clear persisted revealedMap failed', e)

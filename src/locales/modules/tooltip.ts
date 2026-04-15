@@ -1,4 +1,4 @@
-import { SINGLE_TIME_MAX_PERSON_COUNT } from '@/constant/config'
+﻿import { SINGLE_TIME_MAX_PERSON_COUNT } from '@/constant/config'
 
 export const tooltipEn = {
     settingConfiguration: 'Setting/Configuration',
@@ -15,7 +15,7 @@ export const tooltipEn = {
     doneCount: 'Number of winners',
     edit: 'Edit',
     delete: 'Delete',
-    timedStop: 'After the lottery begins, it will stop at a scheduled time by default, set to 0, with the unit in seconds. A value of 0 disables the scheduled stopping function',
+    timedStop: 'After the luckydraw begins, it will stop at a scheduled time by default, set to 0, with the unit in seconds. A value of 0 disables the scheduled stopping function',
     uploadImage: 'Upload Image',
     pleaseGoto: 'Please go to',
     onceNumberMax: `The maximum quantity for a single extraction is ${SINGLE_TIME_MAX_PERSON_COUNT}. If it exceeds ${SINGLE_TIME_MAX_PERSON_COUNT}, it will be automatically extracted in batches for you`,

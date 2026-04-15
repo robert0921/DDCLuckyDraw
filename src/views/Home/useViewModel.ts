@@ -1,4 +1,4 @@
-import type { Material, Object3D } from 'three'
+﻿import type { Material, Object3D } from 'three'
 import type { TargetType } from './type'
 import type { IPersonConfig } from '@/types/storeType'
 import * as TWEEN from '@tweenjs/tween.js'
@@ -18,7 +18,7 @@ import i18n from '@/locales/i18n'
 import useStore from '@/store'
 import { selectCard } from '@/utils'
 import { rgba } from '@/utils/color'
-import { LotteryStatus } from './type'
+import { LuckydrawStatus } from './type'
 import { confettiFire, createSphereVertices, createTableVertices, getRandomElements, initTableData } from './utils'
 
 const maxAudioLimit = 10
@@ -65,7 +65,7 @@ export function useViewModel() {
         sphere: [],
     }
     // 页面数据初始值
-    const currentStatus = ref<LotteryStatus>(LotteryStatus.init) // 0为初始状态， 1为抽奖准备状态，2为抽奖中状态，3为抽奖结束状态
+    const currentStatus = ref<LuckydrawStatus>(LuckydrawStatus.init) // 0为初始状态， 1为抽奖准备状态，2为抽奖中状态，3为抽奖结束状态
     const tableData = ref<any[]>([])
     const luckyTargets = ref<any[]>([])
     const luckyCardList = ref<number[]>([])
@@ -80,14 +80,14 @@ export function useViewModel() {
     // 全局点击停止处理
     function onAnyClickStop(e: MouseEvent) {
         // 如果正在抽奖并处于 running 状态，则点击任意处停止抽奖
-        if (currentStatus.value === LotteryStatus.running) {
-            stopLottery()
+        if (currentStatus.value === LuckydrawStatus.running) {
+            stopLuckydraw()
         }
     }
 
     // 抽奖音乐相关
-    const lotteryMusic = ref<HTMLAudioElement | null>(null)
-    const lotteryMusicObjectUrl = ref<string | null>(null)
+    const luckydrawMusic = ref<HTMLAudioElement | null>(null)
+    const luckydrawMusicObjectUrl = ref<string | null>(null)
 
     function initThreeJs() {
         const felidView = 40
@@ -214,12 +214,12 @@ export function useViewModel() {
     /**
      * @description: 针对某一张卡牌发起抽奖（预选卡位并触发球体旋转和停止）
      */
-    async function startLotteryForCard(idx: number) {
+    async function startLuckydrawForCard(idx: number) {
         if (!canOperate.value) return
         // 确保 tableData 与 three.js 对象同步
         // 预选卡位
         preselectedCardIndex.value = idx
-        // 将对应的奖项信息设为 luckyTargets，以便 stopLottery 使用
+        // 将对应的奖项信息设为 luckyTargets，以便 stopLuckydraw 使用
         luckyTargets.value = [tableData.value[idx] || {}]
         // card click 一次只抽取一个
         luckyCount.value = 1
@@ -232,23 +232,23 @@ export function useViewModel() {
         }
 
         // 隐藏页面网格，进入球体状态并启动转动
-        try { document.querySelector('.lottery-table')?.classList.add('hidden-during-sphere') } catch (e) {}
+        try { document.querySelector('.luckydraw-table')?.classList.add('hidden-during-sphere') } catch (e) {}
         // 确保 renderer 可见
         try { if (renderer && renderer.value && renderer.value.domElement) renderer.value.domElement.style.display = '' } catch (e) {}
-        await enterLottery()
+        await enterLuckydraw()
 
         // 播放抽奖音乐并开始转动
-        startLotteryMusic()
-        currentStatus.value = LotteryStatus.running
+        startLuckydrawMusic()
+        currentStatus.value = LuckydrawStatus.running
         rollBall(10, 3000)
 
         // 自动在 3 秒后停止并展示中奖（不再需要用户二次点击）
         try { if (autoStopTimer.value) clearTimeout(autoStopTimer.value) } catch (e) {}
         autoStopTimer.value = setTimeout(() => {
             try {
-                if (currentStatus.value === LotteryStatus.running) stopLottery()
+                if (currentStatus.value === LuckydrawStatus.running) stopLuckydraw()
             }
-            catch (err) { console.error('auto stopLottery failed', err) }
+            catch (err) { console.error('auto stopLuckydraw failed', err) }
         }, 3000)
 
         // 若配置了 definiteTime，则使用更长的配置时间为准（覆盖自动 3s）
@@ -257,9 +257,9 @@ export function useViewModel() {
             try { if (autoStopTimer.value) clearTimeout(autoStopTimer.value) } catch (e) {}
             autoStopTimer.value = setTimeout(() => {
                 try {
-                    if (currentStatus.value === LotteryStatus.running) stopLottery()
+                    if (currentStatus.value === LuckydrawStatus.running) stopLuckydraw()
                 }
-                catch (err) { console.error('definiteTime stopLottery failed', err) }
+                catch (err) { console.error('definiteTime stopLuckydraw failed', err) }
             }, delay)
         }
     }
@@ -430,13 +430,13 @@ export function useViewModel() {
     /**
      * @description: 开始抽奖音乐
      */
-    function startLotteryMusic() {
+    function startLuckydrawMusic() {
         if (!isPlayWinMusic.value) {
             return
         }
-        if (lotteryMusic.value) {
-            lotteryMusic.value.pause()
-            lotteryMusic.value = null
+        if (luckydrawMusic.value) {
+            luckydrawMusic.value.pause()
+            luckydrawMusic.value = null
         }
 
         // 从「音乐设定」中随机选取一首；若列表为空则回退到内置世界杯音乐
@@ -454,7 +454,7 @@ export function useViewModel() {
                     const blob = candidate as unknown as Blob
                     const objectUrl = URL.createObjectURL(blob)
                     audioUrl = objectUrl
-                    lotteryMusicObjectUrl.value = objectUrl
+                    luckydrawMusicObjectUrl.value = objectUrl
                 }
                 catch (err) {
                     console.warn('创建音频 object URL 失败，回退到内置音乐', err)
@@ -463,11 +463,11 @@ export function useViewModel() {
             }
         }
 
-        lotteryMusic.value = new Audio(audioUrl)
-        lotteryMusic.value.loop = true
-        lotteryMusic.value.volume = 0.7
+        luckydrawMusic.value = new Audio(audioUrl)
+        luckydrawMusic.value.loop = true
+        luckydrawMusic.value.volume = 0.7
 
-        lotteryMusic.value.play().catch((error) => {
+        luckydrawMusic.value.play().catch((error) => {
             console.error('播放抽奖音乐失败:', error)
         })
     }
@@ -475,18 +475,18 @@ export function useViewModel() {
     /**
      * @description: 停止抽奖音乐
      */
-    function stopLotteryMusic() {
+    function stopLuckydrawMusic() {
         if (!isPlayWinMusic.value) {
             return
         }
-        if (lotteryMusic.value) {
-            lotteryMusic.value.pause()
-            lotteryMusic.value = null
+        if (luckydrawMusic.value) {
+            luckydrawMusic.value.pause()
+            luckydrawMusic.value = null
             // 释放通过 createObjectURL 创建的临时 URL
             try {
-                if (lotteryMusicObjectUrl.value) {
-                    URL.revokeObjectURL(lotteryMusicObjectUrl.value)
-                    lotteryMusicObjectUrl.value = null
+                if (luckydrawMusicObjectUrl.value) {
+                    URL.revokeObjectURL(luckydrawMusicObjectUrl.value)
+                    luckydrawMusicObjectUrl.value = null
                 }
             }
             catch (e) {}
@@ -543,7 +543,7 @@ export function useViewModel() {
             return
         }
         // 停止抽奖音乐
-        stopLotteryMusic()
+        stopLuckydrawMusic()
 
         // 清理所有正在播放的音频
         playingAudios.value.forEach((audio) => {
@@ -559,7 +559,7 @@ export function useViewModel() {
      * @returns 随机抽取球数据
      */
     /// <IP_ADDRESS>description 进入抽奖准备状态
-    async function enterLottery() {
+    async function enterLuckydraw() {
         if (!canOperate.value) {
             return
         }
@@ -597,13 +597,13 @@ export function useViewModel() {
         }
         canOperate.value = false
         await transform(targets.sphere, 1000)
-        currentStatus.value = LotteryStatus.ready
+        currentStatus.value = LuckydrawStatus.ready
         rollBall(0.1, 2000)
     }
     /**
      * @description 开始抽奖
      */
-    function startLottery() {
+    function startLuckydraw() {
         if (!canOperate.value) {
             return
         }
@@ -664,14 +664,14 @@ export function useViewModel() {
         })
 
         // 开始播放抽奖音乐
-        startLotteryMusic()
+        startLuckydrawMusic()
 
-        currentStatus.value = LotteryStatus.running
+        currentStatus.value = LuckydrawStatus.running
         rollBall(10, 3000)
         if (definiteTime.value) {
             setTimeout(() => {
-                if (currentStatus.value === LotteryStatus.running) {
-                    stopLottery()
+                if (currentStatus.value === LuckydrawStatus.running) {
+                    stopLuckydraw()
                 }
             }, definiteTime.value * 1000)
         }
@@ -679,7 +679,7 @@ export function useViewModel() {
     /**
      * @description: 停止抽奖，抽出幸运人
      */
-    async function stopLottery() {
+    async function stopLuckydraw() {
         // 清理自动停止定时器，防止重复触发
         try { if (autoStopTimer.value) { clearTimeout(autoStopTimer.value); autoStopTimer.value = null } } catch (e) {}
 
@@ -687,7 +687,7 @@ export function useViewModel() {
             return
         }
         // 停止抽奖音乐
-        stopLotteryMusic()
+        stopLuckydrawMusic()
 
         // 播放结束音效
         playEndSound()
@@ -700,22 +700,22 @@ export function useViewModel() {
         rollBall(0, 1)
 
         const windowSize = { width: window.innerWidth, height: window.innerHeight }
-        // 若 tween onComplete 未触发，使用回退机制确保最终会派发 lottery:end
-        let lotteryEndDispatched = false
-        // 如果存在预选卡位：优先让 three.js 的动画路径（移位并触发 onComplete）来派发 lottery:end 并展示“大图/高亮”效果。
+        // 若 tween onComplete 未触发，使用回退机制确保最终会派发 luckydraw:end
+        let luckydrawEndDispatched = false
+        // 如果存在预选卡位：优先让 three.js 的动画路径（移位并触发 onComplete）来派发 luckydraw:end 并展示“大图/高亮”效果。
         // 仅在无法渲染 three.js（renderer DOM 缺失或 objects 不完整）时，才走立即派发并移除 renderer 的回退路径。
         if (preselectedCardIndex.value !== null) {
             const canRenderLucky = (renderer && renderer.value && renderer.value.domElement && objects.value && objects.value.length > (preselectedCardIndex.value))
             if (!canRenderLucky) {
                 try {
                     const personCandidate = (luckyTargets.value && luckyTargets.value.length) ? luckyTargets.value[0] : (tableData.value && tableData.value[preselectedCardIndex.value]) || null
-                    const ev = new CustomEvent('lottery:end', { detail: { index: preselectedCardIndex.value, person: personCandidate } })
+                    const ev = new CustomEvent('luckydraw:end', { detail: { index: preselectedCardIndex.value, person: personCandidate } })
                     window.dispatchEvent(ev)
                 }
-                catch (e) { console.error('immediate dispatch lottery:end failed', e) }
-                lotteryEndDispatched = true
+                catch (e) { console.error('immediate dispatch luckydraw:end failed', e) }
+                luckydrawEndDispatched = true
                 // 回退路径仍然尝试恢复页面网格并移除 renderer
-                try { document.querySelector('.lottery-table')?.classList.remove('hidden-during-sphere') } catch (e) {}
+                try { document.querySelector('.luckydraw-table')?.classList.remove('hidden-during-sphere') } catch (e) {}
                 try {
                     if (renderer && renderer.value && renderer.value.domElement && renderer.value.domElement.parentElement) {
                         renderer.value.domElement.parentElement.removeChild(renderer.value.domElement)
@@ -729,10 +729,10 @@ export function useViewModel() {
                     try {
                         const revealedCount = document.querySelectorAll('.grid-cell.revealed').length
                         if (revealedCount === 0) {
-                            console.warn('No revealed DOM detected after immediate lottery:end — forcing continueLottery')
+                            console.warn('No revealed DOM detected after immediate luckydraw:end — forcing continueLuckydraw')
                             canOperate.value = true
-                            currentStatus.value = LotteryStatus.end
-                            try { continueLottery() } catch (err) { console.error('forced continueLottery failed', err) }
+                            currentStatus.value = LuckydrawStatus.end
+                            try { continueLuckydraw() } catch (err) { console.error('forced continueLuckydraw failed', err) }
                         }
                     }
                     catch (err) {
@@ -741,7 +741,7 @@ export function useViewModel() {
                 }, 1200)
             }
             else {
-                // 允许正常的 three.js 动画路径继续：不要立即派发或移除 renderer，等到 item 的 onComplete 分支派发 lottery:end 并执行 confetti/highlight
+                // 允许正常的 three.js 动画路径继续：不要立即派发或移除 renderer，等到 item 的 onComplete 分支派发 luckydraw:end 并执行 confetti/highlight
             }
         }
         const deferredSnapshot = { preselected: preselectedCardIndex.value, targets: (luckyTargets.value && luckyTargets.value.slice()) || [] }
@@ -749,13 +749,13 @@ export function useViewModel() {
         if (deferredSnapshot.targets && deferredSnapshot.targets.length) {
             setTimeout(() => {
                 try {
-                    if (!lotteryEndDispatched) {
+                    if (!luckydrawEndDispatched) {
                         const fallbackPerson = deferredSnapshot.targets[0]
                         const fallbackIndex = deferredSnapshot.preselected ?? 0
                         console.warn('deferred path fallback dispatch after timeout', { fallbackIndex, fallbackPerson })
-                        const ev = new CustomEvent('lottery:end', { detail: { index: fallbackIndex, person: fallbackPerson } })
+                        const ev = new CustomEvent('luckydraw:end', { detail: { index: fallbackIndex, person: fallbackPerson } })
                         window.dispatchEvent(ev)
-                        lotteryEndDispatched = true
+                        luckydrawEndDispatched = true
                     }
                 }
                 catch (err) { console.error('deferred fallback dispatch failed', err) }
@@ -853,14 +853,14 @@ export function useViewModel() {
             })
             posTween.onComplete(() => {
                 canOperate.value = true
-                currentStatus.value = LotteryStatus.end
+                currentStatus.value = LuckydrawStatus.end
                 try {
-                    const ev = new CustomEvent('lottery:end', { detail: { index: cardIndex, person } })
+                    const ev = new CustomEvent('luckydraw:end', { detail: { index: cardIndex, person } })
                     window.dispatchEvent(ev)
                 }
-                catch (e) { console.error('dispatch lottery:end failed', e) }
-                lotteryEndDispatched = true
-                // 在抽奖结束后保留 three.js 渲染以展示获奖卡牌；页面网格恢复由用户点击该高亮卡牌触发 continueLottery()
+                catch (e) { console.error('dispatch luckydraw:end failed', e) }
+                luckydrawEndDispatched = true
+                // 在抽奖结束后保留 three.js 渲染以展示获奖卡牌；页面网格恢复由用户点击该高亮卡牌触发 continueLuckydraw()
                 try {
                     const el = item.element as HTMLElement
                     // 放大高亮元素，确保文字可读
@@ -911,19 +911,19 @@ export function useViewModel() {
                                 if (renderer && renderer.value && renderer.value.domElement) renderer.value.domElement.style.pointerEvents = ''
                                 if (containerRef && containerRef.value) containerRef.value.style.pointerEvents = 'none'
                             } catch (e) {}
-                            try { continueLottery() } catch (err) { console.error('continueLottery failed on click', err) }
+                            try { continueLuckydraw() } catch (err) { console.error('continueLuckydraw failed on click', err) }
                         }
                         // 全局后备：若局部点击没有被触发，则任意点击页面也能触发继续（仅在当前状态为 end 时）
                         const globalContinueHandler = (ev: MouseEvent) => {
                             try {
-                                if (currentStatus.value === LotteryStatus.end) {
+                                if (currentStatus.value === LuckydrawStatus.end) {
                                     try { window.removeEventListener('click', globalContinueHandler) } catch (e) {}
                                     try { el.removeEventListener('click', onClickContinue) } catch (e) {}
                                     try {
                                         if (renderer && renderer.value && renderer.value.domElement) renderer.value.domElement.style.pointerEvents = ''
                                         if (containerRef && containerRef.value) containerRef.value.style.pointerEvents = 'none'
                                     } catch (e) {}
-                                    try { continueLottery() } catch (err) { console.error('continueLottery failed in global handler', err) }
+                                    try { continueLuckydraw() } catch (err) { console.error('continueLuckydraw failed in global handler', err) }
                                 }
                             }
                             catch (err) {
@@ -952,21 +952,21 @@ export function useViewModel() {
                 })
         })
 
-        // 回退：若在 1600ms 内未派发 lottery:end，则强制派发一次（防止页面卡死在 three.js）
+        // 回退：若在 1600ms 内未派发 luckydraw:end，则强制派发一次（防止页面卡死在 three.js）
         setTimeout(() => {
             if (!luckyTargets.value || !luckyTargets.value.length) return
-            if (!lotteryEndDispatched) {
+            if (!luckydrawEndDispatched) {
                 const fallbackIndex = (luckyCardList.value && luckyCardList.value.length) ? luckyCardList.value[0] : (preselectedCardIndex.value ?? 0)
                 try {
-                    const ev = new CustomEvent('lottery:end', { detail: { index: fallbackIndex, person: luckyTargets.value[0] } })
+                    const ev = new CustomEvent('luckydraw:end', { detail: { index: fallbackIndex, person: luckyTargets.value[0] } })
                     window.dispatchEvent(ev)
-                    console.warn('lottery:end dispatched by fallback', { index: fallbackIndex })
-                    currentStatus.value = LotteryStatus.end
+                    console.warn('luckydraw:end dispatched by fallback', { index: fallbackIndex })
+                    currentStatus.value = LuckydrawStatus.end
                     canOperate.value = true
                 }
-                catch (e) { console.error('fallback dispatch lottery:end failed', e) }
+                catch (e) { console.error('fallback dispatch luckydraw:end failed', e) }
                     // 回退路径：自动提交
-                    try { continueLottery() } catch (err) { console.error('fallback auto continueLottery failed', err) }
+                    try { continueLuckydraw() } catch (err) { console.error('fallback auto continueLuckydraw failed', err) }
             }
         }, 1600)
 
@@ -1019,7 +1019,7 @@ export function useViewModel() {
     /**
      * @description: 继续,意味着这抽奖作数，计入数据库
      */
-    async function continueLottery() {
+    async function continueLuckydraw() {
         if (!canOperate.value) {
             return
         }
@@ -1088,7 +1088,7 @@ export function useViewModel() {
             console.error('sync prizeConfig list failed', err)
         }
         // 恢复页面网格显示并隐藏 three.js 渲染（在用户确认后恢复 DOM 网格）
-        try { document.querySelector('.lottery-table')?.classList.remove('hidden-during-sphere') } catch (e) {}
+        try { document.querySelector('.luckydraw-table')?.classList.remove('hidden-during-sphere') } catch (e) {}
         try {
             if (renderer && renderer.value && renderer.value.domElement && renderer.value.domElement.parentElement) {
                 renderer.value.domElement.parentElement.removeChild(renderer.value.domElement)
@@ -1097,25 +1097,25 @@ export function useViewModel() {
                 renderer.value.domElement.style.display = 'none'
             }
         } catch (e) {}
-        currentStatus.value = LotteryStatus.init
+        currentStatus.value = LuckydrawStatus.init
         // 告知页面层返回展示模式（由页面决定如何处理）
         try {
-            const ev = new CustomEvent('lottery:returnToShowcase')
+            const ev = new CustomEvent('luckydraw:returnToShowcase')
             window.dispatchEvent(ev)
         }
-        catch (e) { console.error('dispatch lottery:returnToShowcase failed', e) }
+        catch (e) { console.error('dispatch luckydraw:returnToShowcase failed', e) }
     }
     /**
      * @description: 放弃本次抽奖，回到初始状态
      */
-    function quitLottery() {
+    function quitLuckydraw() {
         // 停止抽奖音乐
-        stopLotteryMusic()
+        stopLuckydrawMusic()
 
         try { if (autoStopTimer.value) { clearTimeout(autoStopTimer.value); autoStopTimer.value = null } } catch (e) {}
 
         // 直接恢复页面网格并隐藏 three.js 渲染
-        try { document.querySelector('.lottery-table')?.classList.remove('hidden-during-sphere') } catch (e) {}
+        try { document.querySelector('.luckydraw-table')?.classList.remove('hidden-during-sphere') } catch (e) {}
         try {
             if (renderer && renderer.value && renderer.value.domElement && renderer.value.domElement.parentElement) {
                 renderer.value.domElement.parentElement.removeChild(renderer.value.domElement)
@@ -1124,7 +1124,7 @@ export function useViewModel() {
                 renderer.value.domElement.style.display = 'none'
             }
         } catch (e) {}
-        currentStatus.value = LotteryStatus.init
+        currentStatus.value = LuckydrawStatus.init
     }
 
     /**
@@ -1180,24 +1180,24 @@ export function useViewModel() {
         if ((e.keyCode !== 32 || e.keyCode !== 27) && !canOperate.value) {
             return
         }
-        if (e.keyCode === 27 && currentStatus.value === LotteryStatus.running) {
-            quitLottery()
+        if (e.keyCode === 27 && currentStatus.value === LuckydrawStatus.running) {
+            quitLuckydraw()
         }
         if (e.keyCode !== 32) {
             return
         }
         switch (currentStatus.value) {
-            case LotteryStatus.init:
-                enterLottery()
+            case LuckydrawStatus.init:
+                enterLuckydraw()
                 break
-            case LotteryStatus.ready:
-                startLottery()
+            case LuckydrawStatus.ready:
+                startLuckydraw()
                 break
-            case LotteryStatus.running:
-                stopLottery()
+            case LuckydrawStatus.running:
+                stopLuckydraw()
                 break
-            case LotteryStatus.end:
-                continueLottery()
+            case LuckydrawStatus.end:
+                continueLuckydraw()
                 break
             default:
                 break
@@ -1219,7 +1219,7 @@ export function useViewModel() {
         try { if (autoStopTimer.value) { clearTimeout(autoStopTimer.value); autoStopTimer.value = null } } catch (e) {}
 
         // 停止抽奖音乐
-        stopLotteryMusic()
+        stopLuckydrawMusic()
 
         // 清理所有音频资源
         playingAudios.value.forEach((audio) => {
@@ -1310,14 +1310,14 @@ export function useViewModel() {
 
     return {
         setDefaultPersonList,
-        startLottery,
-        startLotteryForCard,
+        startLuckydraw,
+        startLuckydrawForCard,
         setPreselectedCard: (idx: number | null) => { preselectedCardIndex.value = idx },
-        continueLottery,
-        quitLottery,
+        continueLuckydraw,
+        quitLuckydraw,
         containerRef,
-        stopLottery,
-        enterLottery,
+        stopLuckydraw,
+        enterLuckydraw,
         tableData,
         currentStatus,
         isInitialDone,

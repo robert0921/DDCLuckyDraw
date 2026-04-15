@@ -1,4 +1,4 @@
-
+﻿
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, reactive, nextTick } from 'vue'
 import { useWindowSize } from '@vueuse/core'
@@ -29,7 +29,7 @@ import { useViewModel } from './useViewModel'
 
 // 集成三维抽奖逻辑
 const vm = useViewModel()
-const { setDefaultPersonList, enterLottery, startLottery, startLotteryForCard, stopLottery, continueLottery, quitLottery, tableData, currentStatus, isInitialDone, containerRef, titleFont, titleFontSyncGlobal } = vm
+const { setDefaultPersonList, enterLuckydraw, startLuckydraw, startLuckydrawForCard, stopLuckydraw, continueLuckydraw, quitLuckydraw, tableData, currentStatus, isInitialDone, containerRef, titleFont, titleFontSyncGlobal } = vm
 
 // 同步当前卡牌数据到 three.js 的 tableData
 function syncTableDataFromCardGrid() {
@@ -49,9 +49,9 @@ function syncTableDataFromCardGrid() {
   tableData.value = table
 }
 
-function startLotteryWrapper() {
+function startLuckydrawWrapper() {
   syncTableDataFromCardGrid()
-  startLottery()
+  startLuckydraw()
 }
 
 // 卡牌数据结构（参考原始项目，x/y赋值，编号自适应）
@@ -150,7 +150,7 @@ function getCardGrid(prizes: any[], revealedMap: Record<string, any>) {
 // 恢复已揭晓的映射（持久化到 localStorage）
 function loadPersistedRevealedMap() {
   try {
-    const raw = localStorage.getItem('lottery:revealedMap')
+    const raw = localStorage.getItem('luckydraw:revealedMap')
     if (raw) {
       const parsed = JSON.parse(raw)
       return parsed || {}
@@ -218,7 +218,7 @@ function sleep(ms: number) {
   return new Promise<void>(resolve => setTimeout(resolve, ms))
 }
 
-async function runPreviewThenLottery(cardIdx: number) {
+async function runPreviewThenLuckydraw(cardIdx: number) {
   if (previewPhase.value !== 'idle') return
   stopFlickers()
 
@@ -249,7 +249,7 @@ async function runPreviewThenLottery(cardIdx: number) {
   previewPhase.value = 'idle'
   startFlickers()
   syncTableDataFromCardGrid()
-  if (vm && vm.startLotteryForCard) vm.startLotteryForCard(cardIdx)
+  if (vm && vm.startLuckydrawForCard) vm.startLuckydrawForCard(cardIdx)
 }
 
 function rebindPrizes() {
@@ -315,18 +315,18 @@ const gridLeftBase = computed(() => cardWidth.value + gridOffsetX.value)
 
 onMounted(() => {
   // 监听抽奖结束事件以同步揭晓状态
-  window.addEventListener('lottery:end', onLotteryEnd)
+  window.addEventListener('luckydraw:end', onLuckydrawEnd)
   // 当抽奖确认并继续后，页面层需返回初始展示模式
-  window.addEventListener('lottery:returnToShowcase', returnToShowcase)
+  window.addEventListener('luckydraw:returnToShowcase', returnToShowcase)
   startFlickers()
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('lottery:end', onLotteryEnd)
-  window.removeEventListener('lottery:returnToShowcase', returnToShowcase)
+  window.removeEventListener('luckydraw:end', onLuckydrawEnd)
+  window.removeEventListener('luckydraw:returnToShowcase', returnToShowcase)
   stopFlickers()
 })
 
-function onLotteryEnd(e: any) {
+function onLuckydrawEnd(e: any) {
   try {
     const detail = e.detail || {}
     const idx = typeof detail.index === 'number' ? detail.index : null
@@ -339,7 +339,7 @@ function onLotteryEnd(e: any) {
     // 回退：如果 cardGrid 中没有 prize（可能因为同步顺序问题），尝试使用事件中携带的 person 数据
     if (!prize && detail.person) {
       prize = detail.person
-      console.warn('[onLotteryEnd] prize not found in cardGrid — using event.person as fallback')
+      console.warn('[onLuckydrawEnd] prize not found in cardGrid — using event.person as fallback')
     }
     if (prize) {
       revealedMap.value[key] = prize
@@ -376,11 +376,11 @@ const cardLabelFontScale = 0.45 // 编号最大字号比例
 // ===== 应用模式 =====
 // showcase: 展示模式，所有卡牌显示奖品图片
 // entering: 过渡动画（洗牌）
-// lottery: 抽奖模式，卡牌显示编号，可点击抽奖
-const appMode = ref<'showcase' | 'entering' | 'lottery'>('showcase')
+// luckydraw: 抽奖模式，卡牌显示编号，可点击抽奖
+const appMode = ref<'showcase' | 'entering' | 'luckydraw'>('showcase')
 const shuffleOffset = reactive<Record<number, { x: number; y: number; rt?: string; s?: number; td?: number }>>({})
 
-async function enterNewLottery() {
+async function enterNewLuckydraw() {
   if (appMode.value !== 'showcase') return
   appMode.value = 'entering'
   stopFlickers()
@@ -429,7 +429,7 @@ async function enterNewLottery() {
   rebindPrizes()
   await nextTick()
 
-  appMode.value = 'lottery'
+  appMode.value = 'luckydraw'
   startFlickers()
   syncTableDataFromCardGrid()
 }
@@ -452,9 +452,9 @@ function onCardClick(card: any) {
   if (card.locked) return
   if (previewPhase.value !== 'idle') return
   const idx = card.row * COLS + card.col
-  // 直接进入 three.js 抽奖流程：同步 tableData 并调用 startLotteryForCard
+  // 直接进入 three.js 抽奖流程：同步 tableData 并调用 startLuckydrawForCard
   syncTableDataFromCardGrid()
-  if (vm && vm.startLotteryForCard) vm.startLotteryForCard(idx)
+  if (vm && vm.startLuckydrawForCard) vm.startLuckydrawForCard(idx)
 }
 
 // revealedMap 变化时只做持久化——不触发 rebindPrizes（避免抽奖中途误刷格子）
@@ -462,10 +462,10 @@ import { watch } from 'vue'
 watch(revealedMap, (val) => {
   try {
     if (!val || Object.keys(val).length === 0) {
-      localStorage.removeItem('lottery:revealedMap')
+      localStorage.removeItem('luckydraw:revealedMap')
     }
     else {
-      localStorage.setItem('lottery:revealedMap', JSON.stringify(val))
+      localStorage.setItem('luckydraw:revealedMap', JSON.stringify(val))
     }
   }
   catch (e) {
@@ -569,18 +569,18 @@ function getCardStyleVars(card: any) {
     :title-font="titleFont"
     :title-font-sync-global="titleFontSyncGlobal"
   />
-  <div class="lottery-area">
+  <div class="luckydraw-area">
     <!-- 展示模式：进入抽奖按钮 -->
     <div id="menu">
       <div class="start">
-        <button v-if="appMode === 'showcase'" class="btn-stars" @click="enterNewLottery">
+        <button v-if="appMode === 'showcase'" class="btn-stars" @click="enterNewLuckydraw">
           <strong>进入抽奖</strong>
           <div id="container-stars"><div id="stars"/></div>
           <div id="glow"><div class="circle"/><div class="circle"/></div>
         </button>
       </div>
     </div>
-    <div class="lottery-table" :style="{ width: `${COLS * cardWidth + (COLS - 1) * 6}px`, height: `${ROWS * cardHeight + (ROWS - 1) * 6}px` }">
+    <div class="luckydraw-table" :style="{ width: `${COLS * cardWidth + (COLS - 1) * 6}px`, height: `${ROWS * cardHeight + (ROWS - 1) * 6}px` }">
       <!-- 卡牌区域 -->
       <div class="grid-area" :style="{ left: `${cardWidth / 2}px`, top: '0px', width: `${COLS * cardWidth + (COLS - 1) * 6}px`, height: `${ROWS * cardHeight + (ROWS - 1) * 6}px`, ['--card-size']: `${cardWidth}px` }">
         <div
@@ -597,7 +597,7 @@ function getCardStyleVars(card: any) {
           :style="{
             gridColumnStart: card.col + 1,
             gridRowStart: card.row + 1,
-            cursor: (card.revealed && appMode === 'lottery') ? 'pointer' : (!card.locked && appMode === 'lottery' && previewPhase === 'idle' && !HIDDEN_COLS.includes(card.col)) ? 'pointer' : 'default',
+            cursor: (card.revealed && appMode === 'luckydraw') ? 'pointer' : (!card.locked && appMode === 'luckydraw' && previewPhase === 'idle' && !HIDDEN_COLS.includes(card.col)) ? 'pointer' : 'default',
             '--tx': shuffleOffset[card.id] ? `${shuffleOffset[card.id].x}px` : '0px',
             '--ty': shuffleOffset[card.id] ? `${shuffleOffset[card.id].y}px` : '0px',
             '--rt': shuffleOffset[card.id] ? (shuffleOffset[card.id].rt || '0deg') : '0deg',
@@ -623,7 +623,7 @@ function getCardStyleVars(card: any) {
             </div>
           </template>
           <!-- 展示模式（未揭晓、非隐藏）：显示奖品图片 -->
-          <template v-else-if="appMode !== 'lottery' && !HIDDEN_COLS.includes(card.col)">
+          <template v-else-if="appMode !== 'luckydraw' && !HIDDEN_COLS.includes(card.col)">
             <div class="card-frame" :style="{ ['--frame-colors']: (cardIsPattern(card) ? (getPatterColorVal.value || '#1b66c9') : (getCardColorVal.value || '#ff79c6')) }">
               <div class="card-content showcase-card-content">
                 <ImageSync
@@ -688,14 +688,14 @@ function getCardStyleVars(card: any) {
 </template>
 
 <style scoped lang="scss">
-.lottery-area {
+.luckydraw-area {
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   min-height: 700px;
 }
-.lottery-table {
+.luckydraw-table {
   position: relative;
   background: transparent;
 }
@@ -862,7 +862,7 @@ function getCardStyleVars(card: any) {
   user-select: none;
 }
 /* 进入抽奖按钮 */
-.btn-enter-lottery {
+.btn-enter-luckydraw {
   position: absolute;
   top: 18px;
   left: 50%;
@@ -880,7 +880,7 @@ function getCardStyleVars(card: any) {
   transition: filter 0.15s, box-shadow 0.15s, transform 0.15s;
   letter-spacing: 0.1em;
 }
-.btn-enter-lottery:hover {
+.btn-enter-luckydraw:hover {
   filter: brightness(1.1);
   box-shadow: 0 6px 24px rgba(27,102,201,0.55);
   transform: translateX(-50%) translateY(-2px);
@@ -927,7 +927,7 @@ function getCardStyleVars(card: any) {
 }
 
 /* 隐藏页面网格（球体展示时） */
-.lottery-table.hidden-during-sphere {
+.luckydraw-table.hidden-during-sphere {
   visibility: hidden;
 }
 .prize-img.full-img {

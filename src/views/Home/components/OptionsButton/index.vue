@@ -1,31 +1,31 @@
-<script setup lang='ts'>
+﻿<script setup lang='ts'>
 import { toRefs } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { LotteryStatus } from '@/views/Home/type'
+import { LuckydrawStatus } from '@/views/Home/type'
 
 interface Props {
-    currentStatus: LotteryStatus
+    currentStatus: LuckydrawStatus
     tableData: any[]
-    enterLottery: () => void
-    startLottery: () => void
-    stopLottery: () => void
-    continueLottery: () => void
-    quitLottery: () => void
+    enterLuckydraw: () => void
+    startLuckydraw: () => void
+    stopLuckydraw: () => void
+    continueLuckydraw: () => void
+    quitLuckydraw: () => void
 }
 const props = defineProps<Props>()
 
-const { currentStatus, tableData, enterLottery, startLottery, stopLottery, continueLottery, quitLottery } = toRefs(props)
+const { currentStatus, tableData, enterLuckydraw, startLuckydraw, stopLuckydraw, continueLuckydraw, quitLuckydraw } = toRefs(props)
 const { t } = useI18n()
 </script>
 
 <template>
   <div id="menu">
-    <button v-if="currentStatus === LotteryStatus.init && tableData.length > 0" class="btn-neon" @click="enterLottery">
-      {{ t('button.enterLottery') }}
+    <button v-if="currentStatus === LuckydrawStatus.init && tableData.length > 0" class="btn-neon" @click="enterLuckydraw">
+      {{ t('button.enterLuckydraw') }}
     </button>
 
-    <div v-if="currentStatus === LotteryStatus.ready" class="start">
-      <button class="btn-stars" @click="startLottery">
+    <div v-if="currentStatus === LuckydrawStatus.ready" class="start">
+      <button class="btn-stars" @click="startLuckydraw">
         <strong>{{ t('button.start') }}</strong>
         <div id="container-stars">
           <div id="stars" />
@@ -38,13 +38,13 @@ const { t } = useI18n()
       </button>
     </div>
 
-    <button v-if="currentStatus === LotteryStatus.running" class="btn-neon btn glass btn-lg" @click="stopLottery">
+    <button v-if="currentStatus === LuckydrawStatus.running" class="btn-neon btn glass btn-lg" @click="stopLuckydraw">
       {{ t('button.selectLucky') }}
     </button>
 
-    <div v-if="currentStatus === LotteryStatus.end" class="flex justify-center gap-6 enStop">
+    <div v-if="currentStatus === LuckydrawStatus.end" class="flex justify-center gap-6 enStop">
       <div class="start">
-        <button class="btn-stars" @click="continueLottery">
+        <button class="btn-stars" @click="continueLuckydraw">
           <strong>{{ t('button.continue') }}</strong>
           <div id="container-stars">
             <div id="stars" />
@@ -58,7 +58,7 @@ const { t } = useI18n()
       </div>
 
       <div class="start">
-        <button class="btn-stars btn-cancel" @click="quitLottery">
+        <button class="btn-stars btn-cancel" @click="quitLuckydraw">
           <strong>{{ t('button.cancel') }}</strong>
           <div id="container-stars">
             <div id="stars" />
