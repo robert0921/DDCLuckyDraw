@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="200" viewBox="0 0 900 200">
+  <rect width="900" height="200" rx="12" fill="#0F1724"/>
+  <text x="18" y="28" fill="#F8FAFC" font-size="18" font-family="Arial, Helvetica, sans-serif">Theme B — 单色高对比（投影/清晰）</text>
+  <g transform="translate(18,48)">
+    <rect x="0" y="0" width="140" height="120" rx="8" fill="#0F1724" />
+    <text x="8" y="96" fill="#F8FAFC" font-size="12">卡牌 #0F1724</text>
+
+    <rect x="160" y="0" width="140" height="120" rx="8" fill="#263245" />
+    <text x="168" y="96" fill="#F8FAFC" font-size="12">图案 #263245</text>
+
+    <rect x="302" y="0" width="340" height="120" rx="8" fill="#FF6B6B" />
+    <text x="312" y="96" fill="#071021" font-size="12">高亮 #FF6B6B</text>
+
+    <rect x="656" y="0" width="100" height="52" rx="6" fill="#F8FAFC" />
+    <text x="666" y="36" fill="#0F1724" font-size="12">文字 #F8FAFC</text>
+
+    <rect x="656" y="66" width="100" height="52" rx="6" fill="#FF6B6B" opacity="0.22" />
+    <text x="666" y="102" fill="#ffffffcc" font-size="12">边框 rgba(255,107,107,0.22)</text>
+  </g>
+</svg>
